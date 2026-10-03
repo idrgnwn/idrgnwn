@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Raja Setan - Virtual Assistant</title>
+  <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48 64x64" type="image/x-icon">
+
+  <!--
+  Vanilla port of the Next.js clone of https://jarvis-ai-xi.vercel.app/
+  site-key jarvis-ai-xi-vercel-app-62be9be0 · page-key root-8a5edab2
+
+  Same DOM, same CSS values, same JS behaviour as the React build — only the
+  framework is gone. See README.md for what maps to what.
+
+  Fonts are self-hosted next to this file, so the page renders identically with
+  no network access at all.
+-->
+
+  <!-- Preloaded because both faces paint above the fold: the tagline (Roboto Mono)
+     and the wordmark (Photograph Signature). Same two files Next preloaded. -->
+  <link rel="preload" href="assets/fonts/roboto-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/photograph-signature.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/img/jarvis-neural-head.webp" as="image">
+
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body>
+
+  <!--
+  The whole page is one screen: a single centered flex column, exactly 100vh,
+  with no scroll. `.jarvis-root` scopes the palette and Roboto Mono.
+
+  The speak bar ("Click here to speak") is deliberately absent — it is the one
+  piece of chrome that sits IN the flex flow, so adding it would consume the
+  tagline's trailing 40px margin and shift the hero. Its CSS is kept in
+  styles.css and the markup is in README.md, so restoring it is a paste.
+-->
+  <section class="jarvis-root">
+
+    <!-- Ambient particle field. Absolutely positioned, so it is out of the flex
+       flow and adds nothing to layout. -->
+    <canvas class="jarvis-particles" aria-hidden="true"></canvas>
+
+    <!-- ── Top nav + waffle apps menu ─────────────────────────────────────
+       Absolutely positioned, so the hero keeps its own centering.
+
+       The dropdown ships in the markup and is toggled with the `hidden`
+       attribute, rather than being built by JS: it stays readable as plain
+       HTML, and it is the one thing here that still works with JS disabled
+       (as static markup) instead of vanishing. -->
+
+    <!-- -->
+    <nav class="jarvis-nav" aria-label="Account and apps">
+      <div class="jarvis-waffle-wrap">
+        <button type="button" class="jarvis-waffle-btn" aria-label="Google apps" aria-haspopup="true"
+          aria-expanded="false">
+          <!-- The 9-dot waffle, drawn directly — a 3x3 of circles is more faithful
+             than any icon-set approximation. 
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle cx="4" cy="4" r="2" fill="currentColor" />
+            <circle cx="12" cy="4" r="2" fill="currentColor" />
+            <circle cx="20" cy="4" r="2" fill="currentColor" />
+            <circle cx="4" cy="12" r="2" fill="currentColor" />
+            <circle cx="12" cy="12" r="2" fill="currentColor" />
+            <circle cx="20" cy="12" r="2" fill="currentColor" />
+            <circle cx="4" cy="20" r="2" fill="currentColor" />
+            <circle cx="12" cy="20" r="2" fill="currentColor" />
+            <circle cx="20" cy="20" r="2" fill="currentColor" />
+          </svg>
+          -->
+
+        </button>
+
+        <!--
+        On the icons: Lucide glyphs (v1.6.0, ISC) tinted with Google's palette,
+        rather than redrawing Google's actual product logos — those are
+        trademarks. The layout, spacing and behaviour are faithful; the marks
+        are stand-ins. Path data is inlined verbatim from lucide-react, at the
+        same size=26 / stroke-width=1.9 the React version rendered.
+      -->
+        <div class="jarvis-apps" role="menu" aria-label="Google apps" hidden>
+          <p class="jarvis-apps-note">
+            <a class="jarvis-apps-signin" href="#signin">Sign in</a> to arrange apps
+          </p>
+          <div class="jarvis-apps-grid">
+
+            <a class="jarvis-app" href="#account" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#4285f4"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="8" r="5" />
+                  <path d="M20 21a8 8 0 0 0-16 0" />
+                </svg></span>
+              <span class="jarvis-app-label">Account</span>
+            </a>
+
+            <a class="jarvis-app" href="#search" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#8ab4f8"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m21 21-4.34-4.34" />
+                  <circle cx="11" cy="11" r="8" />
+                </svg></span>
+              <span class="jarvis-app-label">Search</span>
+            </a>
+
+            <a class="jarvis-app" href="#maps" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#34a853"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path
+                    d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg></span>
+              <span class="jarvis-app-label">Maps</span>
+            </a>
+
+            <a class="jarvis-app" href="#youtube" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#ea4335"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" />
+                </svg></span>
+              <span class="jarvis-app-label">YouTube</span>
+            </a>
+
+            <a class="jarvis-app" href="#news" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#4285f4"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M15 18h-5" />
+                  <path d="M18 14h-8" />
+                  <path
+                    d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2" />
+                  <rect width="8" height="4" x="10" y="6" rx="1" />
+                </svg></span>
+              <span class="jarvis-app-label">News</span>
+            </a>
+
+            <a class="jarvis-app" href="#gmail" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#ea4335"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" />
+                  <rect x="2" y="4" width="20" height="16" rx="2" />
+                </svg></span>
+              <span class="jarvis-app-label">Gmail</span>
+            </a>
+
+            <a class="jarvis-app" href="#meet" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#fbbc04"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5" />
+                  <rect x="2" y="6" width="14" height="12" rx="2" />
+                </svg></span>
+              <span class="jarvis-app-label">Meet</span>
+            </a>
+
+            <a class="jarvis-app" href="#chat" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#34a853"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path
+                    d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" />
+                </svg></span>
+              <span class="jarvis-app-label">Chat</span>
+            </a>
+
+            <a class="jarvis-app" href="#contacts" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#4285f4"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16 2v2" />
+                  <path d="M7 22v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" />
+                  <path d="M8 2v2" />
+                  <circle cx="12" cy="11" r="3" />
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                </svg></span>
+              <span class="jarvis-app-label">Contacts</span>
+            </a>
+
+            <a class="jarvis-app" href="#drive" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#fbbc04"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M10 16h.01" />
+                  <path
+                    d="M2.212 11.577a2 2 0 0 0-.212.896V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5.527a2 2 0 0 0-.212-.896L18.55 5.11A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+                  <path d="M21.946 12.013H2.054" />
+                  <path d="M6 16h.01" />
+                </svg></span>
+              <span class="jarvis-app-label">Drive</span>
+            </a>
+
+            <a class="jarvis-app" href="#calendar" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#4285f4"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M8 2v4" />
+                  <path d="M16 2v4" />
+                  <rect width="18" height="18" x="3" y="4" rx="2" />
+                  <path d="M3 10h18" />
+                </svg></span>
+              <span class="jarvis-app-label">Calendar</span>
+            </a>
+
+            <a class="jarvis-app" href="#play" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#34a853"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" />
+                </svg></span>
+              <span class="jarvis-app-label">Play</span>
+            </a>
+
+            <a class="jarvis-app" href="#translate" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#4285f4"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m5 8 6 6" />
+                  <path d="m4 14 6-6 2-3" />
+                  <path d="M2 5h12" />
+                  <path d="M7 2h1" />
+                  <path d="m22 22-5-10-5 10" />
+                  <path d="M14 18h6" />
+                </svg></span>
+              <span class="jarvis-app-label">Translate</span>
+            </a>
+
+            <a class="jarvis-app" href="#photos" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#ea4335"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                </svg></span>
+              <span class="jarvis-app-label">Photos</span>
+            </a>
+
+            <a class="jarvis-app" href="#shopping" role="menuitem">
+              <span class="jarvis-app-icon" style="color:#fbbc04"><svg xmlns="http://www.w3.org/2000/svg" width="26"
+                  height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16 10a4 4 0 0 1-8 0" />
+                  <path d="M3.103 6.034h17.794" />
+                  <path
+                    d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z" />
+                </svg></span>
+              <span class="jarvis-app-label">Shopping</span>
+            </a>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- 
+
+      <a class="jarvis-signin" href="#signin">Sign in</a>
+
+      -->
+
+    </nav>
+
+    <!-- ── Hero: hologram, wordmark, tagline ──────────────────────────────
+       `.jarvis-hero` declares no width on purpose. It is a fit-content block in
+       a centered flex column, so it sizes to the tagline's max-content width
+       (518.48px at 54 characters of 16px Roboto Mono) plus 2x10px padding.
+       Every character of the tagline is worth 9.6px of hero width — editing
+       that string moves the hologram's whole column. -->
+    <div class="jarvis-hero">
+      <div class="jarvis-hologram-row">
+        <!-- The aura layers below paint this same image, blurred and scaled, to
+           form a head-shaped halo. Their copy of the path lives in styles.css
+           (`--jarvis-head-src`) rather than in a style attribute here: a
+           relative url() inside a custom property is resolved against the
+           stylesheet that consumes it, not against this document, so declaring
+           it here made the browser ask for assets/css/assets/img/… and 404. -->
+        <div class="jarvis-hologram-stage">
+          <div class="jarvis-hologram">
+            <span class="jarvis-hologram-aura jarvis-hologram-aura--far" aria-hidden="true"></span>
+            <span class="jarvis-hologram-aura jarvis-hologram-aura--near" aria-hidden="true"></span>
+            <img src="assets/img/jarvis-neural-head.webp" alt="image" width="350" height="350">
+          </div>
+        </div>
+      </div>
+
+      <h1 class="jarvis-wordmark">RajaSetan</h1>
+
+      <!--
+      The tagline is typed out one character at a time by assets/js/typewriter.js.
+      The finished sentence is ALWAYS in the DOM, in `.jarvis-tagline-ghost`
+      (visibility:hidden), because the hero's width is this string's max-content
+      width — revealing the text by growing a substring would re-measure the hero
+      on every keystroke and visibly resize the whole column, hologram included.
+      `.jarvis-tagline-typed` is absolutely positioned over that ghost, so the
+      visible characters can never feed back into layout.
+
+      Keep the ghost on one line. Its textContent is what typewriter.js types,
+      so a line break inside it becomes a newline plus indent in the typed
+      output, and it must stay character-identical to the .sr-only copy below.
+
+      The 40px bottom margin is the gap the speak bar used to occupy. It is kept
+      rather than zeroed so the hero block keeps its original box.
+    -->
+
+      <p class="jarvis-tagline">
+        <span class="jarvis-tagline-ghost" aria-hidden="true">Hello stranger, I am the assistant to the leader of all Autobots.</span>
+        <span class="jarvis-tagline-typed" aria-hidden="true"><span class="jarvis-caret"></span></span>
+        <span class="sr-only">Hello stranger, I am the assistant to the leader of all Autobots.</span>
+      </p>
+
+      <!-- With JS off the overlay never fills in, so reveal the ghost instead —
+         the sentence is already in the markup, it is only hidden. -->
+      <noscript>
+        <style>
+          .jarvis-tagline-ghost {
+            visibility: visible
+          }
+
+          .jarvis-caret {
+            display: none
+          }
+        </style>
+      </noscript>
+    </div>
+
+    <!-- ── Two-tier footer ────────────────────────────────────────────────
+       Absolutely positioned, so it stays out of the flex flow and the hero is
+       not pushed up by it. -->
+
+    <!--
+    <footer class="jarvis-footer">
+      <div class="jarvis-footer-country">Indonesia</div>
+      <div class="jarvis-footer-rows">
+        <ul class="jarvis-footer-links">
+          <li><a href="#about">About</a></li>
+          <li><a href="#advertising">Advertising</a></li>
+          <li><a href="#business">Business</a></li>
+          <li><a href="#how-search-works">How Search works</a></li>
+        </ul>
+        <ul class="jarvis-footer-links">
+          <li><a href="#privacy">Privacy</a></li>
+          <li><a href="#terms">Terms</a></li>
+          <li><a href="#settings">Settings</a></li>
+        </ul>
+      </div>
+    </footer>
+
+ -->
+
+  </section>
+
+  <script src="assets/js/particles.js" defer></script>
+  <script src="assets/js/typewriter.js" defer></script>
+  <script src="assets/js/apps-menu.js" defer></script>
+</body>
+
+</html>

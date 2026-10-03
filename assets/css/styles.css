@@ -1,0 +1,796 @@
+/* ==========================================================================
+   Raja Setan — Virtual Assistant landing page
+   Vanilla port of the Next.js/Tailwind clone of https://jarvis-ai-xi.vercel.app/
+   site-key jarvis-ai-xi-vercel-app-62be9be0 · page-key root-8a5edab2
+
+   Every value here is the computed value the Tailwind build produced, not a
+   re-guess. The Tailwind utilities that were on the elements (flex, p-[10px],
+   text-[16px] …) have been folded into the semantic classes they sat next to,
+   so the markup carries no bracket-escaped class names.
+
+   Section order:
+     1. Fonts (self-hosted)
+     2. Reset — the part of Tailwind preflight this page actually depends on
+     3. Page shell
+     4. Palette + root layout
+     5. Wordmark
+     6. Particle field
+     7. Hologram
+     8. Tagline / typewriter
+     9. Top nav + waffle apps menu
+    10. Footer
+    11. Speak bar (dormant — not in the markup, kept for restoring)
+    12. Narrow screens
+   ========================================================================== */
+
+
+/* ── 1. Fonts ─────────────────────────────────────────────────────────────
+   Self-hosted, so the page renders identically with no network access.
+
+   Roboto Mono is the latin subset Next emitted from Google Fonts — a variable
+   face covering weights 100–700 in one 32 KB file, which is why there is no
+   separate bold. `Roboto Mono Fallback` is the metric-matched Arial stand-in
+   Next generates: while the woff2 loads (font-display: swap) text is laid out
+   at the real face's metrics, so the swap does not reflow the hero.
+
+   Photograph Signature by Yadhie Setiawan (Typeline Studio) is LICENSED FOR
+   PERSONAL USE ONLY — see fonts/LICENSE.md. A commercial or promotional launch
+   needs a license from the author, or a different face on `.jarvis-wordmark`.
+   It ships Regular only; `.jarvis-wordmark` therefore asks for 400 so the
+   browser never synthesises a faux-bold, which on a script face thickens the
+   hairlines into mush and closes up the counters. No metric-matched fallback is
+   generated for it on purpose: its declared hhea metrics (1291/-428 per 1000
+   upem) are a 1.72em line box built for swashes, and `.jarvis-wordmark` sets
+   the line box from measured ink instead. */
+
+@font-face {
+  font-family: "Roboto Mono";
+  src: url("../fonts/roboto-mono-latin.woff2") format("woff2");
+  font-weight: 100 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto Mono Fallback";
+  src: local(Arial);
+  ascent-override: 77.84%;
+  descent-override: 20.13%;
+  line-gap-override: 0%;
+  size-adjust: 134.61%;
+}
+
+@font-face {
+  font-family: "Photograph Signature";
+  src: url("../fonts/photograph-signature.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-roboto-mono: "Roboto Mono", "Roboto Mono Fallback";
+  --font-signature: "Photograph Signature";
+}
+
+
+/* ── 2. Reset ─────────────────────────────────────────────────────────────
+   Not a full normalize — only the preflight rules this layout is measured
+   against. Dropping any of them moves something:
+     · margin/padding 0        — the <p> and <h1> would gain UA margins and the
+                                 hero's height would change
+     · box-sizing: border-box  — `min-height: 100vh` plus the narrow-screen
+                                 padding would otherwise exceed one screen and
+                                 introduce a scrollbar
+     · img/canvas display:block — an inline canvas sits on the text baseline and
+                                 leaves a few px of descender gap
+     · line-height: 1.5 on html — inherited by the nav and footer, which set no
+                                 line-height of their own */
+
+*,
+::before,
+::after,
+::backdrop {
+  box-sizing: border-box;
+  border: 0 solid;
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+ol, ul, menu {
+  list-style: none;
+}
+
+img, svg, video, canvas, audio, iframe, embed, object {
+  display: block;
+  vertical-align: middle;
+}
+
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
+button, input, select, optgroup, textarea {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  opacity: 1;
+  background-color: transparent;
+  border-radius: 0;
+}
+
+/* Screen-reader-only text: read aloud, never painted, zero layout footprint. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+
+/* ── 3. Page shell ───────────────────────────────────────────────────────── */
+
+html {
+  height: 100%;
+  line-height: 1.5;
+  tab-size: 4;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  /* The React build had Geist here via next/font. Nothing on the page inherits
+     it — every visible element is inside `.jarvis-root` (Roboto Mono) or in the
+     nav/footer (Roboto, Arial) — so the two Geist faces are not shipped and a
+     system stack stands in. */
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+body {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* Carried over from the Tailwind theme's light-mode `--background` /
+     `--foreground`. Never visible: `.jarvis-root` is a full-viewport black
+     block on top of it. The one place it shows is the rubber-band area when
+     you overscroll on macOS/iOS — set these to #000 / #e8eaed if you would
+     rather that bounce be black too. */
+  background: oklch(1 0 0);
+  color: oklch(0.145 0 0);
+}
+
+
+/* ── 4. Palette + root layout ─────────────────────────────────────────────
+   The whole page is one screen: a single centered flex column, exactly 100vh,
+   with no scroll, no overlays, and no z-index layers beyond the particle field.
+   Colours are the exact values from the target's own stylesheet, confirmed
+   against getComputedStyle. */
+
+.jarvis-root {
+  --jarvis-bg: #000000;                     /* .main background */
+  --jarvis-cyan: #00bcd4;                   /* wordmark — rgb(0, 188, 212) */
+  --jarvis-tagline: #cfdadb;                /* tagline + caret (currentColor) */
+  --jarvis-bar-bg: rgb(202 253 255 / 50%);  /* speak bar fill */
+  --jarvis-bar-fg: #aed0d0;                 /* mic icon + label */
+
+  /* Google dark-mode surface tokens, for the nav / apps menu / footer only.
+     The page itself stays pure black: #202124 is applied to those chrome
+     surfaces, not painted over the hero, which would flatten the hologram and
+     the particle field behind it. */
+  --g-surface: #202124;
+  --g-raised: #303134;
+  --g-divider: #3c4043;
+  --g-text: #e8eaed;
+  --g-muted: #bdc1c6;
+  --g-accent: #8ab4f8;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--jarvis-bg);
+  font-family: var(--font-roboto-mono), monospace;
+
+  /* The wide aura is scale(1.13) of a 350px box, i.e. 395.5px, which pokes ~3px
+     past a 390px viewport and produced a horizontal scrollbar. `clip` trims it
+     without creating a scroll container the way `hidden` would. */
+  overflow-x: clip;
+}
+
+/* Lifts the hero above the particle canvas. Targets the hero specifically —
+   it is the only direct <div> child; the canvas, nav and footer are a <canvas>,
+   a <nav> and a <footer>. Done with position/z-index rather than by wrapping,
+   because a wrapper would become the flex item and the hero would stop sizing
+   to its own content. */
+.jarvis-root > div {
+  position: relative;
+  z-index: 1;
+}
+
+/* The hero's width is deliberately undeclared: it is a fit-content block in a
+   centered flex column, so it sizes to the tagline's max-content width plus
+   2x10px padding — 518.48 + 20 = 538.48px at the current 54-character tagline.
+   No magic number anywhere; the box falls out of the text. */
+.jarvis-hero {
+  padding: 10px;
+}
+
+.jarvis-hologram-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* ── 5. Wordmark ──────────────────────────────────────────────────────────
+   "RajaSetan" is set in Photograph Signature rather than the page's Roboto
+   Mono. Three numbers here are measured for these exact glyphs — re-measure
+   all three if the wordmark text or the face changes:
+
+   · font-size 64px, against the 40px the rest of the clone was measured at,
+     because this face carries an x-height of 450/1000upem against Roboto
+     Mono's ~528 and is a connected script. At 40px it reads far smaller than
+     the mono original it replaces.
+   · line-height 1.17 is the measured ink height: "RajaSetan" sits 64.7px above
+     the baseline and 10px below it = 74.7px = 1.167em. `normal` would take the
+     face's declared 1.72em and reserve a third more room than the glyphs use;
+     0.82 (which restored the original 53px <h1>) cropped the box below the ink
+     and let the capital R climb into the hologram.
+   · padding-left 25.4px is optical centring. `text-align: center` centres the
+     advance box, but this face hangs the R's entry swash 27.2px left of the
+     origin while the final "n" exits only 1.8px past it — so the ink sits
+     (27.2 - 1.8) / 2 = 12.7px left of where the advance box says centre is,
+     visibly off-axis from the hologram above it. Twice that recentres it.
+
+   The 16px top margin is the gap to the hologram, the 10px bottom margin the
+   gap to the tagline. Both are real margins rather than line-box padding,
+   because half-leading recentres the ink on any line-height change and would
+   swallow the gap. */
+
+.jarvis-wordmark {
+  font-family: var(--font-signature), "Segoe Script", cursive;
+  font-size: 64px;
+  font-weight: 400;
+  line-height: 1.17;
+  margin-top: 16px;
+  margin-bottom: 10px;
+  padding-left: 25.4px;
+  text-align: center;
+  color: var(--jarvis-cyan);
+}
+
+
+/* ── 6. Particle field ────────────────────────────────────────────────────
+   Sits behind everything. Absolutely positioned, so it is removed from the
+   flex flow and contributes nothing to layout — the hologram, wordmark and
+   tagline keep the exact geometry the clone was verified against.
+   The animation itself is in assets/js/particles.js. */
+
+.jarvis-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  height: 100%;
+  width: 100%;
+  pointer-events: none;
+}
+
+
+/* ── 7. Hologram ──────────────────────────────────────────────────────────
+   A straight-on, bilaterally symmetric portrait with a soft glow edge, so a
+   rotateY sway is the wrong motion for it: rotating a flat plane skews the face
+   off-axis and drags the glow with it, which reads as a tilting photograph
+   rather than a turning head. Motion comes from three layers instead — it
+   drifts, it breathes, and a head-shaped aura swells around it.
+
+   EVERYTHING HERE IS COMPOSITOR-FRIENDLY BY DESIGN. An earlier version animated
+   `drop-shadow` from 10px to 40px and animated `transform: scale()` on a
+   `blur(20px)` layer. Both force the browser to re-rasterize a blurred surface
+   on every frame, which showed up as the animation stalling and flashing after
+   running for a while. The rules below animate only opacity, transform and
+   brightness; every blur() and scale() is a fixed value that rasterizes once. */
+
+@keyframes jarvis-drift {
+  from, to { transform: translateY(-11px); }
+  50%      { transform: translateY(11px); }
+}
+
+/* Brightness only. The glow that used to live in this filter is now the two
+   aura layers, because a shadow blur cannot be animated without a repaint. */
+@keyframes jarvis-breathe {
+  from, to { filter: brightness(0.9); }
+  50%      { filter: brightness(1.26); }
+}
+
+/* The swell is a cross-fade between a tight aura and a wider one, rather than
+   one aura being scaled. Same visual result, but each layer is rasterized once
+   and only its opacity changes. */
+@keyframes jarvis-aura-near {
+  from, to { opacity: 0.42; }
+  50%      { opacity: 0.82; }
+}
+
+@keyframes jarvis-aura-far {
+  from, to { opacity: 0.06; }
+  50%      { opacity: 0.6; }
+}
+
+.jarvis-hologram-stage {
+  position: relative;
+  height: 350px;
+  width: 350px;
+
+  /* The aura's copy of the head image. It is the same file as the <img> in
+     index.html, and the two paths have to be kept in step — the duplication is
+     deliberate: a relative url() inside a custom property resolves against the
+     stylesheet that CONSUMES it, so declaring this in a style attribute on the
+     element (as the React build did, with an absolute path) makes the browser
+     resolve it against assets/css/ and 404. Declared and used in this one file,
+     it resolves the same way everywhere, including over file://. */
+  --jarvis-head-src: url("../img/jarvis-neural-head.webp");
+}
+
+.jarvis-hologram {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  animation: jarvis-drift 6.5s ease-in-out infinite;
+}
+
+/* The head image again, blurred and pushed behind the sharp copy, so the halo
+   is head-shaped instead of a generic circle. `--jarvis-head-src` is set inline
+   on `.jarvis-hologram-stage` in index.html, next to the <img> it mirrors. */
+.jarvis-hologram-aura {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: var(--jarvis-head-src);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  pointer-events: none;
+}
+
+.jarvis-hologram-aura--near {
+  filter: blur(14px) saturate(1.5) brightness(1.5);
+  animation: jarvis-aura-near 3.6s ease-in-out infinite;
+}
+
+/* Static scale — set once, never animated, so the blur is rasterized a single
+   time at this size. */
+.jarvis-hologram-aura--far {
+  transform: scale(1.13);
+  filter: blur(38px) saturate(1.6) brightness(1.7);
+  animation: jarvis-aura-far 3.6s ease-in-out infinite;
+}
+
+/* The 350px box is the original's. The source is pre-squared, so unlike the
+   target's 500x550 asset it is not distorted. `max-width: none` overrides the
+   reset's `max-width: 100%`, which would otherwise shrink it inside the stage. */
+.jarvis-hologram img {
+  position: relative;
+  z-index: 1;
+  height: 350px;
+  width: 350px;
+  max-width: none;
+  animation: jarvis-breathe 3.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jarvis-hologram,
+  .jarvis-hologram img,
+  .jarvis-hologram-aura {
+    animation: none;
+  }
+}
+
+
+/* ── 8. Tagline / typewriter ──────────────────────────────────────────────
+   Structure and rationale live in assets/js/typewriter.js. The short version:
+   the hero's width IS the tagline's max-content width, so the full sentence
+   must stay in the flow at all times and the animation paints over it. */
+
+.jarvis-tagline {
+  /* Anchors the absolutely-positioned typed overlay to this paragraph. */
+  position: relative;
+  margin-bottom: 40px;
+  text-align: center;
+  font-size: 16px;
+  line-height: normal;
+  color: var(--jarvis-tagline);
+}
+
+/* Layout only — reserves the finished sentence's exact box, on one line at
+   desktop widths and two once it wraps. `visibility: hidden` rather than
+   `opacity: 0` so it also leaves the accessibility tree; the <noscript> block
+   in index.html flips this back to `visible` when there is no JS to paint the
+   overlay. */
+.jarvis-tagline-ghost {
+  visibility: hidden;
+}
+
+/* The visible layer. Out of flow, so however much of the sentence has been
+   typed it can never feed back into the hero's measurement. It inherits the
+   paragraph's centring, so the line grows outward from the middle and — on
+   mobile — spills onto the ghost's reserved second line at the same character
+   the finished sentence wraps at. */
+.jarvis-tagline-typed {
+  position: absolute;
+  inset: 0;
+}
+
+/* Caret. An inline-block box rather than a border on the text, so it holds its
+   width on a space and does not shift the characters beside it. 1em tall and
+   aligned to the text's own baseline box, which keeps it the same height as the
+   glyphs at any font-size. */
+.jarvis-caret {
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  margin-left: 2px;
+  /* Cancels the caret's own advance (7px box + 2px margin). The ghost reserves
+     exactly the sentence's max-content width, so a caret that contributed width
+     pushed the finished line past it and wrapped alone onto a second line. At
+     zero net width it hangs past the last character instead, and the mobile
+     wrap still happens at the same character as the ghost's. */
+  margin-right: -9px;
+  translate: 0 0.16em;
+  background: currentColor;
+}
+
+/* Solid while typing — a caret blinking mid-sentence reads as a stall — then
+   blinking once the sentence has landed. `steps(2, jump-none)` is a hard on/off
+   switch rather than a fade, which is what a terminal cursor actually does. */
+.jarvis-caret[data-done] {
+  animation: jarvis-caret-blink 1.06s steps(2, jump-none) infinite;
+}
+
+@keyframes jarvis-caret-blink {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* The reveal itself is already skipped in the script, which fills the sentence
+   in immediately; this is the caret half of the same setting. */
+@media (prefers-reduced-motion: reduce) {
+  .jarvis-caret[data-done] {
+    animation: none;
+  }
+}
+
+
+/* ── 9. Top nav + waffle apps menu ────────────────────────────────────────
+   Absolutely positioned, so it stays out of the flex flow and the hero keeps
+   its own centering. It declares no background at all, so the page's black and
+   the particle field read straight through it. */
+
+.jarvis-nav {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 22px;
+  font-family: Roboto, Arial, sans-serif;
+}
+
+.jarvis-waffle-wrap {
+  position: relative;
+}
+
+.jarvis-waffle-btn {
+  display: flex;
+  height: 40px;
+  width: 40px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--g-muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.jarvis-waffle-btn:hover,
+.jarvis-waffle-btn[aria-expanded="true"] {
+  background: var(--g-raised);
+}
+
+.jarvis-signin {
+  margin-left: 8px;
+  border-radius: 9999px;
+  background: var(--g-accent);
+  padding: 9px 23px;
+  color: #202124;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.jarvis-signin:hover {
+  background: #aecbfa;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 50%);
+}
+
+/* Apps grid dropdown. In the React build this element was mounted and
+   unmounted; here it is always in the markup and toggled with the `hidden`
+   attribute, so the menu is readable as plain HTML. */
+.jarvis-apps {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: -8px;
+  z-index: 40;
+  width: 320px;
+  max-height: min(70vh, 500px);
+  overflow-y: auto;
+  border: 1px solid var(--g-divider);
+  border-radius: 16px;
+  background: var(--g-raised);
+  box-shadow: 0 4px 20px rgb(0 0 0 / 55%);
+  padding: 14px 6px 10px;
+}
+
+/* Explicit, because `.jarvis-apps` sets `position: absolute` and some resets
+   are aggressive enough to override the UA's own `[hidden] { display: none }`. */
+.jarvis-apps[hidden] {
+  display: none;
+}
+
+.jarvis-apps-note {
+  margin-bottom: 8px;
+  color: var(--g-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.jarvis-apps-signin {
+  color: var(--g-accent);
+  text-decoration: none;
+}
+
+.jarvis-apps-signin:hover {
+  text-decoration: underline;
+}
+
+.jarvis-apps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.jarvis-app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  padding: 12px 4px;
+  color: var(--g-text);
+  font-size: 12px;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.jarvis-app:hover {
+  background: rgb(255 255 255 / 8%);
+}
+
+.jarvis-app-icon {
+  display: flex;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+}
+
+.jarvis-app-label {
+  line-height: 1.2;
+}
+
+
+/* ── 10. Footer ───────────────────────────────────────────────────────────
+   Two-tier, pinned to the bottom of the viewport and absolutely positioned, so
+   the hero keeps its own centering rather than being pushed up by a footer in
+   normal flow. */
+
+.jarvis-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  width: 100%;
+  /* Matches the top nav, which declares no background at all — so the page's
+     black and the particle field read straight through both bars. The #3c4043
+     dividers still carry the two-tier structure. */
+  background: transparent;
+  color: var(--g-muted);
+  font-family: Roboto, Arial, sans-serif;
+  font-size: 14px;
+}
+
+.jarvis-footer-country {
+  border-bottom: 1px solid var(--g-divider);
+  padding: 15px 26px;
+  color: var(--g-text);
+}
+
+.jarvis-footer-rows {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 18px;
+  padding: 6px 26px;
+}
+
+.jarvis-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jarvis-footer-links a {
+  display: inline-block;
+  padding: 9px 6px;
+  color: var(--g-muted);
+  text-decoration: none;
+}
+
+/* Underline rather than weight/size, so hovering never reflows the row. */
+.jarvis-footer-links a:hover {
+  text-decoration: underline;
+}
+
+
+/* ── 11. Speak bar — DORMANT ──────────────────────────────────────────────
+   `.input` from the original: the mic button and its "Click here to speak"
+   label. Not in the markup, on request. The rules are kept so restoring it is
+   a paste of the snippet in README.md — nothing else has to be written.
+
+   READ THIS BEFORE RESTORING IT: unlike the nav and the footer, this element
+   sits IN the flex flow. It consumes the tagline's trailing 40px margin, so
+   adding it moves the hero, and the narrow-screen `padding-bottom: 114px` in
+   section 12 will under-reserve by ~38px. Re-measure both. */
+
+.jarvis-speak {
+  display: flex;
+  height: 50px;
+  width: 40vw;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  background: var(--jarvis-bar-bg);
+}
+
+.jarvis-speak-btn {
+  display: flex;
+  height: 50px;
+  width: 50px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+}
+
+.jarvis-speak-icon {
+  height: 20px;
+  width: 13.75px;
+  fill: var(--jarvis-bar-fg);
+}
+
+/* `margin-right: 20px` is load-bearing: it participates in the container's
+   `justify-content: center`, which pushes the visible pair 10px left of true
+   centre. The original does this, so a symmetric `gap` would be wrong. */
+.jarvis-speak-label {
+  margin-right: 20px;
+  font-size: 15px;
+  line-height: normal;
+  font-weight: bold;
+  color: var(--jarvis-bar-fg);
+}
+
+/* The page's single responsive rule on the original:
+   @media screen and (max-width: 1000px) { .main .input { width: 90% } } */
+@media (max-width: 1000px) {
+  .jarvis-speak {
+    width: 90%;
+  }
+}
+
+
+/* ── 12. Narrow screens ───────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  /* Reserves the narrow-screen chrome. Nav and footer are absolutely positioned
+     and so contribute nothing to the flex flow; without this the hero centres in
+     the whole viewport and runs underneath them — measured at 390x667, the
+     tagline sat 6.4px into the footer.
+
+     The values are the chrome's own measured heights at this width, so the hero
+     centres in the gap between them: the nav is 60px (10px padding, 40px waffle
+     button, 10px padding) and the footer 113.5px (the "Indonesia" tier over the
+     two link rows), rounded up to 114.
+
+     `box-sizing: border-box` from the reset is what keeps `min-height: 100vh`
+     resolving to exactly one screen with this padding on, so no scrollbar is
+     introduced — down to ~750px of viewport height, below which the 552.8px
+     hero no longer fits the reserved gap and the page scrolls rather than
+     overlapping. */
+  .jarvis-root {
+    padding-top: 60px;
+    padding-bottom: 114px;
+  }
+
+  /* The hero is a fit-content block, so its width is the tagline's max-content
+     width — currently 518.48px, moving 9.6px with every character added to or
+     removed from that string. Capped to 396px here as requested, which is why
+     the cap does not need re-deriving when the copy changes.
+     `max-width` rather than `width`, because a hard 396px would overflow a
+     390px viewport by 6px and bring the horizontal scrollbar back. */
+  .jarvis-hero {
+    max-width: 396px;
+  }
+
+  .jarvis-nav {
+    padding: 10px 12px;
+  }
+
+  /* On desktop the card hangs off the waffle button (right: -8px), which is
+     correct there. On a narrow screen that same anchor pushes it left and leaves
+     a gap on the right, so it never reads as centred. Switch to viewport
+     centring instead: `fixed` + left 50% + translateX(-50%). Safe here because
+     no ancestor is transformed, which would otherwise re-root a fixed element.
+     `top` clears the 60px nav (10px padding + 40px button + 10px). */
+  .jarvis-apps {
+    position: fixed;
+    top: 64px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(320px, calc(100vw - 24px));
+  }
+
+  .jarvis-footer {
+    font-size: 13px;
+  }
+
+  .jarvis-footer-country {
+    padding: 11px 16px;
+  }
+
+  .jarvis-footer-rows {
+    justify-content: center;
+    gap: 0 12px;
+    padding: 2px 16px;
+  }
+
+  .jarvis-footer-links a {
+    padding: 7px 5px;
+  }
+}
